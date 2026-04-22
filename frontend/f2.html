@@ -1,0 +1,898 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spherical Mirror Simulation</title>
+    <style>
+      @import url("css/fonts.css");
+
+      body {
+        text-align: center;
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(45deg, #011436, #1e3c72, #6380ff);
+        background-size: 200% 200%;
+        animation: gradientAnimation 10s ease infinite;
+        color: #fff;
+        margin: 0;
+        padding: 0;
+      }
+
+      @keyframes gradientAnimation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      h1 {
+        font-family: "Playfair Display", serif;
+        font-weight: 700;
+        font-size: 55px;
+        margin-bottom: 5px;
+        color: #ffcc00;
+        text-align: center;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        background: linear-gradient(45deg, #ffcc00, #ff6600, #ff0000);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 4px 4px 15px rgba(255, 204, 0, 1), 2px 2px 10px rgba(255, 102, 0, 0.8);
+        position: relative;
+        display: inline-block;
+      }
+
+      h1::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: -10px;
+        width: 60%;
+        height: 4px;
+        background: linear-gradient(45deg, #ffcc00, #ff1e00);
+        transform: translateX(-50%);
+        border-radius: 5px;
+      }
+
+      .simulation-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        margin: 20px auto;
+        width: 95%;
+        max-width: 1600px;
+      }
+
+      #simulation-container {
+        flex: 3;
+        max-width: 80%;
+      }
+
+      canvas {
+        background: rgb(255, 255, 255);
+        border: 2px solid #ffffff;
+        width: 100%;
+        height: auto;
+        display: block;
+        margin: 0;
+        cursor: pointer;
+        border-radius: 10px;
+        box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      #info-box {
+        flex: 1;
+        max-width: 380px;
+        padding: 5px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        text-align: left;
+        margin-left: 10px;
+        font-size: 14px;
+        font-family: "Poppins", sans-serif;
+      }
+
+      #manual-calculation {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        text-align: left;
+        margin-left: 10px;
+        font-size: 13px;
+      }
+
+      #manual-calculation input {
+        width: 210px;
+        padding: 2px;
+        margin: 5px 0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.8);
+      }
+
+      #manual-calculation button {
+        padding: 8px 70px;
+        background: linear-gradient(135deg, #f38703, #ff4500);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease-in-out;
+        font-weight: bold;
+        margin-top: 10px;
+      }
+
+      #manual-calculation button:hover {
+        background: linear-gradient(135deg, #ff6a00, #d43f00);
+        transform: scale(1.05);
+      }
+
+      .controls {
+        margin: 10px 0;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        display: inline-block;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      button {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #f38703, #ff4500);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 15px;
+        transition: all 0.3s ease-in-out;
+        font-weight: bold;
+      }
+
+      button:hover {
+        background: linear-gradient(135deg, #ff6a00, #d43f00);
+        transform: scale(1.05);
+      }
+
+      .legend {
+        margin-top: 10px;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        margin-right: 15px;
+        font-size: 14px;
+      }
+
+      .legend-color {
+        width: 15px;
+        height: 15px;
+        margin-right: 5px;
+        display: inline-block;
+        border-radius: 50%;
+        box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
+      }
+
+      .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(5px);
+        animation: fadeIn 0.3s ease-in-out;
+      }
+
+      .center-button {
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .popup-overlay.closing {
+        animation: fadeOut 0.3s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.9); }
+        to { opacity: 1; transform: scale(1); }
+      }
+
+      @keyframes fadeOut {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.9); }
+      }
+
+      .popup-content {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 20px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        text-align: center;
+        position: relative;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        color: white;
+      }
+
+      .popup-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 20px;
+        cursor: pointer;
+        color: white;
+        background: none;
+        border: none;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .popup-close:hover { background: rgba(255, 255, 255, 0.3); }
+      .popup-title { font-size: 1.5em; margin-bottom: 15px; color: white; }
+      .popup-result { font-size: 2em; margin: 20px 0; font-weight: bold; color: #f38703; }
+      .popup-details { margin-bottom: 15px; font-size: 14px; }
+
+      @media (max-width: 768px) {
+        .simulation-wrapper { flex-direction: column; align-items: center; }
+        #info-box { max-width: 90%; text-align: center; margin-left: 0; }
+        #manual-calculation { max-width: 90%; text-align: center; }
+      }
+
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+      }
+
+      .pulsate { animation: pulse 1.5s infinite; }
+
+      .info-button {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #f38703, #ff4500);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 15px;
+        transition: all 0.3s ease-in-out;
+        font-weight: bold;
+        z-index: 1000;
+      }
+
+      .info-button:hover {
+        background: linear-gradient(135deg, #ff6a00, #d43f00);
+        transform: scale(1.05);
+      }
+
+      .intro-popup { max-width: 800px; text-align: left; }
+      .intro-content { max-height: 70vh; overflow-y: auto; padding-right: 10px; }
+      .intro-content h3 { margin-top: 15px; color: #f38703; }
+      .intro-content ul { margin: 10px 0; padding-left: 20px; }
+      .intro-content ul li { margin-bottom: 5px; }
+
+      /* ===================== CHATBOT STYLES ===================== */
+
+      #chat-toggle-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 62px;
+        height: 62px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f38703, #ff4500);
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 6px 24px rgba(243, 135, 3, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        transition: transform 0.25s, box-shadow 0.25s;
+        padding: 0;
+        font-size: 28px;
+      }
+
+      #chat-toggle-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 8px 30px rgba(243, 135, 3, 0.75);
+        background: linear-gradient(135deg, #ff6a00, #d43f00);
+      }
+
+      #chat-toggle-btn .chat-icon { line-height: 1; }
+      #chat-toggle-btn .close-icon { display: none; line-height: 1; font-size: 22px; }
+
+      #chat-toggle-btn.open .chat-icon { display: none; }
+      #chat-toggle-btn.open .close-icon { display: inline; }
+
+      /* Unread badge */
+      #chat-badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 20px;
+        height: 20px;
+        background: #ff1744;
+        border-radius: 50%;
+        font-size: 11px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        display: none;
+        border: 2px solid white;
+      }
+
+      #chatbot-panel {
+        position: fixed;
+        bottom: 105px;
+        right: 30px;
+        width: 380px;
+        max-height: 560px;
+        border-radius: 18px;
+        background: rgba(1, 20, 54, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(22px);
+        box-shadow: 0 16px 50px rgba(0,0,0,0.55);
+        display: flex;
+        flex-direction: column;
+        z-index: 1999;
+        overflow: hidden;
+        transform: scale(0.85) translateY(30px);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease;
+      }
+
+      #chatbot-panel.visible {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      #chat-header {
+        background: linear-gradient(135deg, rgba(243,135,3,0.35), rgba(255,69,0,0.25));
+        border-bottom: 1px solid rgba(255,255,255,0.12);
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+
+      .chat-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f38703, #ff4500);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+        box-shadow: 0 2px 10px rgba(243,135,3,0.4);
+      }
+
+      .chat-header-text { flex: 1; text-align: left; }
+      .chat-header-title { font-size: 14px; font-weight: 700; color: #fff; margin: 0; line-height: 1.2; }
+      .chat-header-sub { font-size: 11px; color: rgba(255,255,255,0.6); margin: 0; }
+
+      .online-dot {
+        width: 8px; height: 8px;
+        background: #00e676;
+        border-radius: 50%;
+        box-shadow: 0 0 6px #00e676;
+        flex-shrink: 0;
+      }
+
+      #chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        scroll-behavior: smooth;
+      }
+
+      #chat-messages::-webkit-scrollbar { width: 4px; }
+      #chat-messages::-webkit-scrollbar-track { background: transparent; }
+      #chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+      .chat-msg {
+        max-width: 85%;
+        padding: 10px 14px;
+        border-radius: 14px;
+        font-size: 13px;
+        line-height: 1.5;
+        word-wrap: break-word;
+        animation: msgSlideIn 0.25s ease;
+      }
+
+      @keyframes msgSlideIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .chat-msg.bot {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: #fff;
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+      }
+
+      .chat-msg.user {
+        background: linear-gradient(135deg, rgba(243,135,3,0.75), rgba(255,69,0,0.65));
+        color: #fff;
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+        border: 1px solid rgba(255,150,0,0.3);
+      }
+
+      .chat-msg.typing {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        padding: 12px 16px;
+      }
+
+      .typing-dot {
+        width: 7px; height: 7px;
+        background: rgba(255,255,255,0.6);
+        border-radius: 50%;
+        animation: typingBounce 1.2s infinite ease-in-out;
+      }
+
+      .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+      .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+      @keyframes typingBounce {
+        0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+        30% { transform: translateY(-6px); opacity: 1; }
+      }
+
+      /* Quick suggestion chips */
+      #quick-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 8px 14px 4px;
+        flex-shrink: 0;
+      }
+
+      .chip {
+        padding: 5px 10px;
+        border-radius: 20px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: rgba(255,255,255,0.85);
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: "Poppins", sans-serif;
+        white-space: nowrap;
+      }
+
+      .chip:hover {
+        background: rgba(243,135,3,0.35);
+        border-color: rgba(243,135,3,0.6);
+        transform: scale(1.03);
+        color: #fff;
+      }
+
+      #chat-input-area {
+        padding: 12px 14px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+        background: rgba(0,0,0,0.15);
+      }
+
+      #chat-input {
+        flex: 1;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 22px;
+        padding: 9px 14px;
+        color: #fff;
+        font-size: 13px;
+        font-family: "Poppins", sans-serif;
+        outline: none;
+        transition: border-color 0.2s, background 0.2s;
+      }
+
+      #chat-input::placeholder { color: rgba(255,255,255,0.4); }
+
+      #chat-input:focus {
+        border-color: rgba(243,135,3,0.6);
+        background: rgba(255,255,255,0.14);
+      }
+
+      #chat-send-btn {
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f38703, #ff4500);
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        padding: 0;
+        flex-shrink: 0;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 2px 10px rgba(243,135,3,0.4);
+      }
+
+      #chat-send-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 15px rgba(243,135,3,0.6);
+        background: linear-gradient(135deg, #ff6a00, #d43f00);
+      }
+
+      @media (max-width: 480px) {
+        #chatbot-panel { width: calc(100vw - 30px); right: 15px; bottom: 90px; }
+        #chat-toggle-btn { right: 15px; bottom: 20px; }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Spherical Mirror Simulation</h1>
+
+    <div class="center-button">
+      <button onclick="toggleMirrorType()">Change Mirror Type</button>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-color" style="background: green"></span>
+        <span>Object (u)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="background: red"></span>
+        <span>Image (v)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="background: purple"></span>
+        <span>Focal Length (F)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="background: blue"></span>
+        <span>Center of Curvature (C)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="background: orange; opacity: 0.6"></span>
+        <span>Light Rays</span>
+      </div>
+    </div>
+
+    <div class="simulation-wrapper">
+      <div id="simulation-container">
+        <canvas id="mirrorCanvas" width="1400" height="600"></canvas>
+      </div>
+      <div>
+        <div id="info-box">
+          <p><b>Mirror Type:</b> <span id="mirrorType">Concave</span></p>
+          <p><b>Object Position (u):</b> <span id="objectPosition">---</span> units</p>
+          <p><b>Focal Length (f):</b> <span id="focalLength">---</span> units</p>
+          <p><b>Image Position (v):</b> <span id="imagePosition">---</span> units</p>
+          <p><b>Image Properties:</b> <span id="imageProperties">---</span></p>
+          <p><b>Instructions:</b> Drag the green object to move it. Drag the purple focal point to adjust focal length.</p>
+        </div>
+
+        <div id="manual-calculation">
+          <h3>Calculate Yourself !!!</h3>
+          <p>
+            <label for="uInput">Object Position (u) :</label>
+            <input type="text" id="uInput" placeholder="Enter u" />
+          </p>
+          <p>
+            <label for="fInput">Focal Length (f) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</label>
+            <input type="text" id="fInput" placeholder="Enter f" />
+          </p>
+          <button onclick="calculateManual()">Calculate Image Position (v)</button>
+        </div>
+      </div>
+    </div>
+
+    <button id="imageButton" class="info-button" style="top: 80px">Example Calculation</button>
+
+    <div id="imagePopup" class="popup-overlay">
+      <div class="popup-content">
+        <button class="popup-close" onclick="closeImagePopup()">×</button>
+        <h2 class="popup-title">Example Calculation</h2>
+        <img src="convex.JPG" alt="Example Calculation" style="width: 120%; border-radius: 5px" />
+      </div>
+    </div>
+
+    <div id="resultPopup" class="popup-overlay">
+      <div class="popup-content">
+        <button class="popup-close" onclick="closePopup()">×</button>
+        <h2 class="popup-title">Image Position Result</h2>
+        <div id="popupResult" class="popup-result">--</div>
+        <div id="popupDetails" class="popup-details">
+          Object Position (u): <span id="popupU">--</span> units<br />
+          Focal Length (f): <span id="popupF">--</span> units
+        </div>
+        <div id="popupProperties" class="popup-details">
+          Image Properties: <span id="popupImageProperties">--</span>
+        </div>
+      </div>
+    </div>
+
+    <button id="infoButton" class="info-button">More Info</button>
+
+    <div id="introPopup" class="popup-overlay">
+      <div class="popup-content intro-popup">
+        <button class="popup-close" onclick="closeIntroPopup()">×</button>
+        <h2 class="popup-title">Introduction to Reflection by Convex and Concave Mirrors</h2>
+        <div class="intro-content">
+          <p>Welcome to our interactive physics simulation, designed to help you explore the fascinating world of light reflection using convex and concave mirrors.</p>
+          <h3>Understanding Reflection in Curved Mirrors</h3>
+          <p>Reflection is the phenomenon where light bounces off a surface, following the law of reflection: the angle of incidence is equal to the angle of reflection.</p>
+          <h3>Concave Mirrors</h3>
+          <ul>
+            <li>A concave mirror (converging mirror) curves inward like the inside of a spoon.</li>
+            <li>These mirrors focus parallel incoming rays to a single focal point.</li>
+            <li>Depending on object position: Real/inverted images beyond F, Virtual/upright images between mirror and F.</li>
+          </ul>
+          <h3>Convex Mirrors</h3>
+          <ul>
+            <li>A convex mirror (diverging mirror) bulges outward.</li>
+            <li>Always produces Virtual, upright, and diminished images.</li>
+          </ul>
+          <h3>Mirror Formula</h3>
+          <p>1/f = 1/v + 1/u</p>
+          <h3>Learning Objectives</h3>
+          <ul>
+            <li>Understand reflection principles in concave and convex mirrors.</li>
+            <li>Observe how object distance affects image properties.</li>
+            <li>Learn to construct ray diagrams for image formation.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== CHATBOT HTML ===================== -->
+
+    <!-- Floating Toggle Button -->
+    <button id="chat-toggle-btn" onclick="toggleChat()" title="Ask Physics Assistant">
+      <span class="chat-icon">🔭</span>
+      <span class="close-icon">✕</span>
+      <span id="chat-badge"></span>
+    </button>
+
+    <!-- Chatbot Panel -->
+    <div id="chatbot-panel">
+      <div id="chat-header">
+        <div class="chat-avatar">🪞</div>
+        <div class="chat-header-text">
+          <p class="chat-header-title">Mirror Physics Assistant</p>
+          <p class="chat-header-sub">Ask me anything about mirrors & optics</p>
+        </div>
+        <div class="online-dot"></div>
+      </div>
+
+      <div id="chat-messages"></div>
+
+      <div id="quick-chips">
+        <span class="chip" onclick="sendChip(this)">What is a concave mirror?</span>
+        <span class="chip" onclick="sendChip(this)">Mirror formula</span>
+        <span class="chip" onclick="sendChip(this)">Real vs virtual image</span>
+        <span class="chip" onclick="sendChip(this)">What is magnification?</span>
+      </div>
+
+      <div id="chat-input-area">
+        <input id="chat-input" type="text" placeholder="Ask about mirrors, optics…" autocomplete="off" />
+        <button id="chat-send-btn" onclick="sendMessage()" title="Send">➤</button>
+      </div>
+    </div>
+
+    <script src="geometry-tool.js"></script>
+    <script>
+// ===================== CHATBOT LOGIC (FIXED) =====================
+
+let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+let chatOpened = false;
+
+// Save to localStorage
+function saveChatHistory() {
+  localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+}
+
+// Render messages WITHOUT breaking UI
+function renderChat() {
+  const container = document.getElementById("chat-messages");
+  container.innerHTML = "";
+
+  chatHistory.forEach(msg => {
+    const div = document.createElement("div");
+    div.className = "chat-msg " + msg.role;
+
+    if (msg.role === "bot") {
+      div.innerHTML = formatBotText(msg.text);
+    } else {
+      div.textContent = msg.text;
+    }
+
+    container.appendChild(div);
+  });
+
+  container.scrollTop = container.scrollHeight;
+}
+
+// Toggle chat open/close (SAFE)
+function toggleChat(event) {
+  if (event) event.stopPropagation();
+
+  const panel = document.getElementById("chatbot-panel");
+  const btn = document.getElementById("chat-toggle-btn");
+  const badge = document.getElementById("chat-badge");
+
+  panel.classList.toggle("visible");
+  btn.classList.toggle("open");
+  badge.style.display = "none";
+
+  if (!chatOpened) {
+    chatOpened = true;
+
+    if (chatHistory.length === 0) {
+      chatHistory.push({
+        role: "bot",
+        text: "👋 Hi! I'm your Mirror Physics Assistant. Ask me anything about concave & convex mirrors!"
+      });
+      saveChatHistory();
+    }
+
+    renderChat();
+  }
+}
+
+// Add message safely
+function addMessage(role, text) {
+  chatHistory.push({ role, text });
+  saveChatHistory();
+
+  // DO NOT close panel on re-render
+  const panel = document.getElementById("chatbot-panel");
+  const isVisible = panel.classList.contains("visible");
+
+  renderChat();
+
+  if (isVisible) {
+    panel.classList.add("visible");
+  }
+}
+
+// Typing animation
+function showTyping() {
+  const container = document.getElementById("chat-messages");
+
+  const div = document.createElement("div");
+  div.className = "chat-msg bot typing";
+  div.id = "typing-indicator";
+
+  div.innerHTML =
+    '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById("typing-indicator");
+  if (el) el.remove();
+}
+
+// Format text
+function formatBotText(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`(.*?)`/g, "<code style='background:rgba(255,255,255,0.15);padding:1px 5px;border-radius:4px;font-size:12px;'>$1</code>")
+    .replace(/\n/g, "<br>");
+}
+
+// Send message (FIXED)
+async function sendMessage(event) {
+  if (event) event.preventDefault();
+
+  const input = document.getElementById("chat-input");
+  const text = input.value.trim();
+
+  if (!text) return;
+
+  addMessage("user", text);
+  input.value = "";
+
+  showTyping();
+
+  try {
+    const response = await fetch("http://localhost:8000/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: text,
+        simulation_state: {
+          mirrorType: document.getElementById("mirrorType").textContent,
+          u: document.getElementById("objectPosition").textContent,
+          f: document.getElementById("focalLength").textContent,
+          v: document.getElementById("imagePosition").textContent
+        }
+      })
+    });
+
+    const data = await response.json();
+
+    removeTyping();
+    addMessage("bot", data.response);
+
+  } catch (err) {
+    removeTyping();
+    addMessage("bot", "⚠️ Backend connection failed.");
+  }
+}
+
+// Quick chips
+function sendChip(el) {
+  const text = el.textContent;
+  document.getElementById("chat-input").value = text;
+  sendMessage();
+  document.getElementById("quick-chips").style.display = "none";
+}
+
+// ENTER KEY FIX (CRITICAL)
+document.getElementById("chat-input").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    e.preventDefault();   // ⭐ prevents weird behavior
+    e.stopPropagation();  // ⭐ stops bubbling
+    sendMessage();
+  }
+});
+
+// Prevent clicks inside chatbot from closing it
+document.getElementById("chatbot-panel").addEventListener("click", function (e) {
+  e.stopPropagation();
+});
+
+// Prevent accidental outside clicks affecting state
+document.body.addEventListener("click", function () {
+  // Do nothing → prevents auto-close bugs
+});
+    </script>
+  </body>
+</html>
